@@ -1,0 +1,8 @@
+Package: imgui
+Version: 1.84.2
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 5d4305ea3bd5c027e29642e8b3d1b7be70357b9cbc110afa8a5a73cd3b1d189a
+Description: Bloat-free Immediate Mode Graphical User interface for C++ with minimal dependencies.
+Type: Port
+Status: install ok installed

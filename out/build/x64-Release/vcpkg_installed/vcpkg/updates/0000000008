@@ -1,0 +1,9 @@
+Package: opengl
+Version: 0.0
+Port-Version: 9
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 9e5e36e5f17f2f7ef32189bb17062bd5bf8db1f63acc9675c1c31dfb946ab45a
+Description: Open Graphics Library (OpenGL)[3][4][5] is a cross-language, cross-platform application programming interface (API) for rendering 2D and 3D vector graphics.
+Type: Port
+Status: install ok half-installed

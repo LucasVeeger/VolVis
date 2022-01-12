@@ -1,0 +1,104 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.15"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						2,
+						3
+					]
+				},
+				{
+					"build" : "integrity_tests",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.15"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "integrity_tests",
+					"targetIndexes" : 
+					[
+						1
+					]
+				}
+			],
+			"name" : "RelWithDebInfo",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1
+					],
+					"name" : "GLViewer",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "ImGuiWrapper::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ImGuiWrapper-RelWithDebInfo-9402768a9f61f8075bca.json",
+					"name" : "ImGuiWrapper",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "IntegrityTests::@84c41ca8a0b3f4cd76ce",
+					"jsonFile" : "target-IntegrityTests-RelWithDebInfo-18bce89d41c436059e6d.json",
+					"name" : "IntegrityTests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Viewer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Viewer-RelWithDebInfo-0d3e7b45499fda699168.json",
+					"name" : "Viewer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "VolVis::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-VolVis-RelWithDebInfo-1953e811a4a841f3c21b.json",
+					"name" : "VolVis",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/AAASweepsta/MSc. Computer Science/DataVis/VolVis project/Code/out/build/x64-Release",
+		"source" : "C:/AAASweepsta/MSc. Computer Science/DataVis/VolVis project/Code"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 2
+	}
+}

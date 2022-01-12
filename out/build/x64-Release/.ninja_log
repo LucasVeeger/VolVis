@@ -1,0 +1,20 @@
+# ninja log v5
+32	1962	6628546832765149	CMakeFiles/VolVis.dir/src/ui/surface_cube.cpp.obj	59a75f4659b5a26a
+1	2131	6628546834091599	CMakeFiles/VolVis.dir/src/ui/gl_error.cpp.obj	5dace9685e38753e
+29	2207	6628546835348239	CMakeFiles/VolVis.dir/src/ui/wireframe_cube.cpp.obj	8969d87d7af0c394
+15	2481	6628546837073624	CMakeFiles/VolVis.dir/src/ui/opengl.cpp.obj	1323f17122544a02
+5	2648	6628546839716556	CMakeFiles/VolVis.dir/src/ui/full_screen_texture_gl.cpp.obj	881779ab319f45da
+19	2709	6628546840255124	CMakeFiles/VolVis.dir/src/ui/window.cpp.obj	8f5f5f3886cac364
+9	3065	6628546843406689	CMakeFiles/VolVis.dir/src/ui/trackball.cpp.obj	edaac32dea998697
+2649	3207	6628546845421303	CMakeFiles/ImGuiWrapper.dir/src/imgui/imgui_impl_opengl3.cpp.obj	c72f4682d26e9532
+2482	3974	6628546853070863	CMakeFiles/ImGuiWrapper.dir/src/imgui/imgui_impl_glfw.cpp.obj	658ab0a7f2cc792c
+3975	4107	6628546854287612	ImGuiWrapper.lib	43ecf4a5a6934fb2
+23	5897	6628546871810788	CMakeFiles/VolVis.dir/src/ui/transfer_func_2d.cpp.obj	4762cea38a473468
+26	6025	6628546873246951	CMakeFiles/VolVis.dir/src/ui/transfer_func.cpp.obj	c9620fb0fae3a43d
+12	6198	6628546875211696	CMakeFiles/VolVis.dir/src/ui/menu.cpp.obj	1864e9ada22a75cb
+2132	6767	6628546880986263	CMakeFiles/VolVis.dir/src/volume/gradient_volume.cpp.obj	f382a569266aa3de
+1984	7330	6628546886601252	CMakeFiles/VolVis.dir/src/render/renderer.cpp.obj	26be2c1ea49223c4
+2208	7546	6628546888735524	CMakeFiles/VolVis.dir/src/volume/volume.cpp.obj	4c856d674c987599
+7547	7644	6628546889653093	VolVis.lib	cbdea3f037c9f4ac
+2709	7927	6628546892583805	CMakeFiles/Viewer.dir/src/main.cpp.obj	41c7891c09c8a270
+7928	9315	6628546898670787	Viewer.exe	2fca3701aa8e1c62
