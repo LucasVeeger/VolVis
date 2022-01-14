@@ -177,6 +177,7 @@ glm::vec4 Renderer::traceRayISO(const Ray& ray, float sampleStep) const
 {
     static constexpr glm::vec3 isoColor { 0.8f, 0.8f, 0.2f };
     static const float isoValue = m_config.isoValue;
+    glm::vec3 shape {};
     float current_val = 0.0f;
 
     // Ray processing
@@ -191,7 +192,11 @@ glm::vec4 Renderer::traceRayISO(const Ray& ray, float sampleStep) const
         }
     }
 
-    return glm::vec4(isoColor, 1.0f);
+    return glm::vec4(isoColor / current_val, 1.0f);
+    /*glm::vec3 preresult { current_val, current_val, current_val };
+    glm::vec3 result = (preresult*isoColor);
+    return glm::vec4(result / m_pVolume->maximum(), 1.0f);*/
+    //return glm::vec4(glm::vec3(maxVal) / m_pVolume->maximum(), 1.0f);
 
     }
 
