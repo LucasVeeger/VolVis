@@ -186,7 +186,6 @@ glm::vec4 Renderer::traceRayISO(const Ray& ray, float sampleStep) const
         // check if isovalue is reached. If yes, return the isoColor.
         if (val > isoValue) {
             //bisectionAccuracy(ray, t - sampleStep, t, isoValue);
-<<<<<<< HEAD
             ///*float pos_accurate = bisectionAccuracy(ray, t - sampleStep, t, isoValue);
             //samplePos = ray.origin + pos_accurate * ray.direction;
             //m_pVolume->getSampleInterpolate(samplePos);*/
@@ -198,32 +197,13 @@ glm::vec4 Renderer::traceRayISO(const Ray& ray, float sampleStep) const
                 volume::GradientVoxel gradient = m_pGradientVolume->getGradient(samplePos.x, samplePos.y, samplePos.z);
 
                 //Pass the gradient and the normal color to the function to get the shaded color.
-                glm::vec3 phong_color = computePhongShading(isoColor, gradient, ray.direction, m_pCamera->position());
+                glm::vec3 phong_color = computePhongShading(isoColor, gradient, glm::normalize(ray.direction), glm::normalize(m_pCamera->forward()));
 
                 // using the shaded color to compute the final image color.
                 return glm::vec4(phong_color, 1.0f);
             } else {
                 return glm::vec4(isoColor, 1.0f);
             }
-=======
-            /*float pos_accurate = bisectionAccuracy(ray, t - sampleStep, t, isoValue);
-            samplePos = ray.origin + pos_accurate * ray.direction;
-            m_pVolume->getSampleInterpolate(samplePos);*/
-            
-
-            if ( m_config.volumeShading) {
-                float pos_accurate = bisectionAccuracy(ray, t - sampleStep, t, isoValue);
-                samplePos = ray.origin + pos_accurate * ray.direction;
-                volume::GradientVoxel gradient = m_pGradientVolume->getGradient(samplePos.x,samplePos.y,samplePos.z);
-
-                //Pass the gradient and the normal color to the function to get the shaded color.
-                glm::vec3 phong_color = computePhongShading(isoColor, gradient, lightVector, ray.origin);
-
-                // using the shaded color to compute the final image color.
-                return glm::vec4(phong_color ,alpha);
-            }                  
-            return glm::vec4(isoColor, 1.0f);
->>>>>>> 1687c8c356002f88222d9416874a215074260c53
         }
     }
     // return empty vector if the ray didn't have any values > isoValue
@@ -280,107 +260,20 @@ float Renderer::bisectionAccuracy(const Ray& ray, float t0, float t1, float isoV
 // You are free to choose any specular power that you'd like.
 glm::vec3 Renderer::computePhongShading(const glm::vec3& color, const volume::GradientVoxel& gradient, const glm::vec3& L, const glm::vec3& V)
 {
-<<<<<<< HEAD
+
     // Ip = ka*i_a + (kd(L*N)i_d + ks(R*V)^alpha * i_s)
     // R = 2(L*N)N - L
-    const float ka = 1.0f;
-    const float kd = 1.0f;
-    const float ks = 1.0f;
+    const float ka = 0.1f;
+    const float kd = 0.7f;
+    const float ks = 0.2f;
     const float alpha = 100.0f;
 
-    const glm::vec3& N = gradient.dir;
+    const glm::vec3& N = glm::normalize(gradient.dir);
     const glm::vec3& R = 2.0f * (glm::dot(L, N)) * N - L; 
     const glm::vec3& phong = ka * color + (kd * (glm::dot(L, N)) * color + ks * glm::pow(glm::dot(R, V), alpha) * color);
    
     return phong;
-=======
-    float alpha_p = 100.0f;
-    float la = 1.0f;
-    float ld = 1.0f;
-    float ls = 1.0f;
-    float ka = 0.1f;
-    float kd = 0.7f;
-    float ks = 0.2f;
 
-    glm::vec3 return_color = glm::vec3(0, 0, 0);
-
-    glm::vec3 ambient = glm::vec3(0, 0, 0);
-
-    ambient.r = la * ka * color.r;
-    ambient.g = la * ka * color.g;
-    ambient.b = la * ka * color.b;
-
-    // DIFFUSE
-        // Normalise the light vector.
-    glm::normalize(L);
-
-    // Normalise the ray vector.
-    glm::normalize(V);
-
-    // Normalize the normal vector.
-    glm::vec3 normalVector;;
-    normalVector.x = gradient.dir.x / (gradient.magnitude + .000000001);
-    normalVector.y = gradient.dir.y / (gradient.magnitude + .000000001);
-    normalVector.z = gradient.dir.z / (gradient.magnitude + .000000001);
-
-    // Compute cos of the angle between normal vector(Vector perpendicular to the surface)
-    // and light vector(Direction of light source). All vectors are normalised so the
-    // dot-product just gives the value of the numerator ie cos(angle).
-    double cos_theta = glm::dot(normalVector, L);
-
-    // Compute the diffuse color.
-    glm::vec3 diffuse = glm::vec3(0, 0, 0);
-    diffuse.r = (ld * kd * color.r * cos_theta);
-    diffuse.g = (ld * kd * color.g * cos_theta);
-    diffuse.b = (ld * kd * color.b * cos_theta);
-
-    // SPECULAR
-    // Calculate twice of the normal vector.
-    glm::vec3 twice_normalVec;
-
-    twice_normalVec.x = normalVector.x * 2;
-    twice_normalVec.y = normalVector.y * 2;
-    twice_normalVec.z = normalVector.z * 2;
-
-    // Compute cos of the angle between twice the normal vector(Vector perpendicular to the surface)
-    // and light vector(Direction of light source). All vectors are normalised so the dot-product
-    // just gives the value of the numerator ie cos(angle).
-    double intermediateProd = glm::dot(twice_normalVec, L);
-
-    //Computing R vector.
-    glm::vec3 R;
-
-    R.x = intermediateProd * normalVector.x - L.x;
-    R.y = intermediateProd * normalVector.y - L.y;
-    R.z = intermediateProd * normalVector.z - L.z;
-
-    // Computing cos of the angle between ray vector and R.
-    // All vectors are normalised so the dot product just gives the value of the numerator ie cos(angle).
-    double cos_psy = glm::dot(V, R);
-
-    // Compute the specular color.
-    glm::vec3 specular = glm::vec3(0,0,0);
-    specular.r = (ls * ks * glm::pow(cos_psy, alpha_p));
-    specular.g = (ls * ks * glm::pow(cos_psy, alpha_p));
-    specular.b = (ls * ks * glm::pow(cos_psy, alpha_p));
-
-    // PHONG REFLECTION = Ambient + Diffuse + Specular.
-    // Compute the final color.
-    return_color.r = ambient.r + diffuse.r + specular.r;
-    return_color.g = ambient.g + diffuse.g + specular.g;
-    return_color.b = ambient.b + diffuse.b + specular.b;
-
-    // Limit the color range between 0 and 1.
-    if (return_color.r < 0) return_color.r = 0;
-    if (return_color.r > 1) return_color.r = 1;
-    if (return_color.g < 0) return_color.g = 0;
-    if (return_color.g > 1) return_color.g = 1;
-    if (return_color.b < 0) return_color.b = 0;
-    if (return_color.b > 1) return_color.b = 1;
-
-    return return_color;
-
->>>>>>> 1687c8c356002f88222d9416874a215074260c53
 }
 
 
