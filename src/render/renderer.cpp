@@ -262,10 +262,10 @@ glm::vec3 Renderer::computePhongShading(const glm::vec3& color, const volume::Gr
 {
     // Ip = ka*i_a + (kd(L*N)i_d + ks(R*V)^alpha * i_s)
     // R = 2(L*N)N - L
-    const float ka = 0.33f;
-    const float kd = 0.33f;
-    const float ks = 0.33f;
-    const float alpha = 1.0f;
+    const float ka = 1.0f;
+    const float kd = 1.0f;
+    const float ks = 1.0f;
+    const float alpha = 100.0f;
 
     const glm::vec3& N = gradient.dir;
     const glm::vec3& R = 2.0f * (glm::dot(L, N)) * N - L; 
