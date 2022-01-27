@@ -197,7 +197,7 @@ glm::vec4 Renderer::traceRayISO(const Ray& ray, float sampleStep) const
                 volume::GradientVoxel gradient = m_pGradientVolume->getGradient(samplePos.x, samplePos.y, samplePos.z);
 
                 //Pass the gradient and the normal color to the function to get the shaded color.
-                glm::vec3 phong_color = computePhongShading(isoColor, gradient, glm::normalize(ray.direction), glm::normalize(m_pCamera->forward()));
+                glm::vec3 phong_color = computePhongShading(isoColor, gradient, glm::normalize(ray.direction), glm::normalize(m_pCamera->position()));
 
                 // using the shaded color to compute the final image color.
                 return glm::vec4(phong_color, 1.0f);
@@ -260,16 +260,21 @@ float Renderer::bisectionAccuracy(const Ray& ray, float t0, float t1, float isoV
 // You are free to choose any specular power that you'd like.
 glm::vec3 Renderer::computePhongShading(const glm::vec3& color, const volume::GradientVoxel& gradient, const glm::vec3& L, const glm::vec3& V)
 {
-
+    // Following the formulas stated on Wikipedia, considering a single light source.
     // Ip = ka*i_a + (kd(L*N)i_d + ks(R*V)^alpha * i_s)
     // R = 2(L*N)N - L
+    // constants
     const float ka = 0.1f;
     const float kd = 0.7f;
     const float ks = 0.2f;
+    // shininess constant
     const float alpha = 100.0f;
 
+    // normal vector on gradient, normalized
     const glm::vec3& N = glm::normalize(gradient.dir);
-    const glm::vec3& R = 2.0f * (glm::dot(L, N)) * N - L; 
+    // direction vector
+    const glm::vec3& R = 2.0f * (glm::dot(L, N)) * N - L;
+    // Phong formula
     const glm::vec3& phong = ka * color + (kd * (glm::dot(L, N)) * color + ks * glm::pow(glm::dot(R, V), alpha) * color);
    
     return phong;
@@ -282,7 +287,38 @@ glm::vec3 Renderer::computePhongShading(const glm::vec3& color, const volume::Gr
 // Use getTFValue to compute the color for a given volume value according to the 1D transfer function.
 glm::vec4 Renderer::traceRayComposite(const Ray& ray, float sampleStep) const
 {
-    return glm::vec4(0.0f);
+    glm::vec3 c0 = glm::normalize(ray.origin);
+
+    // Incrementing samplePos directly instead of recomputing it each frame gives a measureable speed-up.
+    glm::vec3 samplePos = ray.origin + ray.tmin * ray.direction;
+
+    const glm::vec3 increment = sampleStep * ray.direction;
+
+    glm::vec4 currentColor;
+    glm::vec4 previousColor = glm::vec4();
+
+    for (float t = ray.tmin; t <= ray.tmax; t += sampleStep, samplePos += increment) {
+        const float val = m_pVolume->getSampleInterpolate(samplePos);
+
+        currentColor = getTFValue(val);
+        if (m_config.volumeShading) {
+            volume::GradientVoxel gradient = m_pGradientVolume->getGradient(samplePos.x, samplePos.y, samplePos.z);
+
+            //Pass the gradient and the normal color to the function to get the shaded color.
+            glm::vec3 phong_color = computePhongShading(currentColor, gradient, glm::normalize(ray.direction), glm::normalize(m_pCamera->position()));
+
+            // using the shaded color to compute the final image color
+            currentColor = glm::vec4(phong_color, currentColor.a);
+        }
+
+        previousColor.r = currentColor.a * currentColor.r + (1 - currentColor.a) * previousColor.r;
+        previousColor.g = currentColor.a * currentColor.g + (1 - currentColor.a) * previousColor.g;
+        previousColor.b = currentColor.a * currentColor.b + (1 - currentColor.a) * previousColor.b;
+
+        
+    }
+    
+    return previousColor;
 }
 
 // ======= DO NOT MODIFY THIS FUNCTION ========
