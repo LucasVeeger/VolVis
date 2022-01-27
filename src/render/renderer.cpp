@@ -178,22 +178,22 @@ glm::vec4 Renderer::traceRayISO(const Ray& ray, float sampleStep) const
     static constexpr glm::vec3 isoColor { 0.8f, 0.8f, 0.2f };
     static const float isoValue = m_config.isoValue;
 
-    // Ray processing
+    // Ray processing as covered in example traceRayMIP
     glm::vec3 samplePos = ray.origin + ray.tmin * ray.direction;
     const glm::vec3 increment = sampleStep * ray.direction;
     for (float t = ray.tmin; t <= ray.tmax; t += sampleStep, samplePos += increment) {
         const float val = m_pVolume->getSampleInterpolate(samplePos);
-        // IMPLEMENT Ray process here
+        // check if isovalue is reached. If yes, return the isoColor.
         if (val > isoValue) {
+            bisectionAccuracy(ray, t - sampleStep, t, isoValue);
+            /*float pos_accurate = bisectionAccuracy(ray, t - sampleStep, t, isoValue);
+            samplePos = ray.origin + pos_accurate * ray.direction;
+            m_pVolume->getSampleInterpolate(samplePos);*/
             return glm::vec4(isoColor, 1.0f);
         }
     }
+    // return empty vector if the ray didn't have any values > isoValue
     return glm::vec4();
-
-    /*glm::vec3 preresult { current_val, current_val, current_val };
-    glm::vec3 result = (preresult*isoColor);
-    return glm::vec4(result / m_pVolume->maximum(), 1.0f);*/
-    //return glm::vec4(glm::vec3(maxVal) / m_pVolume->maximum(), 1.0f);
 
     }
 
@@ -203,7 +203,38 @@ glm::vec4 Renderer::traceRayISO(const Ray& ray, float sampleStep) const
 // iterations such that it does not get stuck in degerate cases.
 float Renderer::bisectionAccuracy(const Ray& ray, float t0, float t1, float isoValue) const
 {
-    return 0.0f;
+    // Ray processing as covered in example traceRayMIP, but now in a while loop
+    const int max_iter = 20;
+    int iters = 0;
+    // set bounds for bisection area
+    float pos_upperbound = t1;
+    float pos_lowerbound = t0;
+    // set middle position parameter
+    float pos_middle;
+    glm::vec3 samplePos;
+    // loop until isovalue approximated or max iterations
+    while (iters < max_iter) {
+        // calculate new sample position by averaging the bounds
+        pos_middle = (pos_upperbound - pos_lowerbound)/2 + pos_lowerbound;
+        // set sample position; NEED TO CONVERT TO VEC3??
+        samplePos = ray.origin + pos_middle * ray.direction;
+        const float val = m_pVolume->getSampleInterpolate(samplePos);
+        // check if match limit is reached, if then return, else check which direction to search.
+        if (abs(val - isoValue) < 0.01) {
+            return pos_middle;
+        }
+        // if value still larger than isovalue, check left interval
+        if (val > isoValue) {
+            pos_upperbound = pos_middle;
+        // else, check right interval
+        } else {
+            pos_lowerbound = pos_middle;
+        }
+        // increment counter
+        iters++;
+    }
+    // return current middle position if max iterations reached.
+    return pos_middle;
 }
 
 // ======= TODO: IMPLEMENT ========
