@@ -185,11 +185,25 @@ glm::vec4 Renderer::traceRayISO(const Ray& ray, float sampleStep) const
         const float val = m_pVolume->getSampleInterpolate(samplePos);
         // check if isovalue is reached. If yes, return the isoColor.
         if (val > isoValue) {
-            bisectionAccuracy(ray, t - sampleStep, t, isoValue);
-            /*float pos_accurate = bisectionAccuracy(ray, t - sampleStep, t, isoValue);
-            samplePos = ray.origin + pos_accurate * ray.direction;
-            m_pVolume->getSampleInterpolate(samplePos);*/
-            return glm::vec4(isoColor, 1.0f);
+            //bisectionAccuracy(ray, t - sampleStep, t, isoValue);
+            ///*float pos_accurate = bisectionAccuracy(ray, t - sampleStep, t, isoValue);
+            //samplePos = ray.origin + pos_accurate * ray.direction;
+            //m_pVolume->getSampleInterpolate(samplePos);*/
+            //return glm::vec4(isoColor, 1.0f);
+
+            if (m_config.volumeShading) {
+                float pos_accurate = bisectionAccuracy(ray, t - sampleStep, t, isoValue);
+                samplePos = ray.origin + pos_accurate * ray.direction;
+                volume::GradientVoxel gradient = m_pGradientVolume->getGradient(samplePos.x, samplePos.y, samplePos.z);
+
+                //Pass the gradient and the normal color to the function to get the shaded color.
+                glm::vec3 phong_color = computePhongShading(isoColor, gradient, ray.direction, m_pCamera->position());
+
+                // using the shaded color to compute the final image color.
+                return glm::vec4(phong_color, 1.0f);
+            } else {
+                return glm::vec4(isoColor, 1.0f);
+            }
         }
     }
     // return empty vector if the ray didn't have any values > isoValue
@@ -246,8 +260,18 @@ float Renderer::bisectionAccuracy(const Ray& ray, float t0, float t1, float isoV
 // You are free to choose any specular power that you'd like.
 glm::vec3 Renderer::computePhongShading(const glm::vec3& color, const volume::GradientVoxel& gradient, const glm::vec3& L, const glm::vec3& V)
 {
-    
-    return glm::vec3(0.0f);
+    // Ip = ka*i_a + (kd(L*N)i_d + ks(R*V)^alpha * i_s)
+    // R = 2(L*N)N - L
+    const float ka = 0.33f;
+    const float kd = 0.33f;
+    const float ks = 0.33f;
+    const float alpha = 1.0f;
+
+    const glm::vec3& N = gradient.dir;
+    const glm::vec3& R = 2.0f * (glm::dot(L, N)) * N - L; 
+    const glm::vec3& phong = ka * color + (kd * (glm::dot(L, N)) * color + ks * glm::pow(glm::dot(R, V), alpha) * color);
+   
+    return phong;
 }
 
 // ======= TODO: IMPLEMENT ========
