@@ -176,7 +176,7 @@ glm::vec4 Renderer::traceRayMIP(const Ray& ray, float sampleStep) const
 glm::vec4 Renderer::traceRayISO(const Ray& ray, float sampleStep) const
 {
     static constexpr glm::vec3 isoColor { 0.8f, 0.8f, 0.2f };
-    static const float isoValue = m_config.isoValue;
+    float isoValue = m_config.isoValue;
 
     // Ray processing as covered in example traceRayMIP
     glm::vec3 samplePos = ray.origin + ray.tmin * ray.direction;
@@ -310,7 +310,7 @@ glm::vec4 Renderer::traceRayComposite(const Ray& ray, float sampleStep) const
             volume::GradientVoxel gradient = m_pGradientVolume->getGradientInterpolate(samplePos);
 
             //Pass the gradient and the normal color to the function to get the shaded color.
-            currentColor = glm::vec4(computePhongShading(currentColor*currentColor.w, gradient, glm::normalize(m_pCamera->position()), glm::normalize(ray.direction)), currentColor.a);
+            currentColor = glm::vec4(computePhongShading(currentColor, gradient, glm::normalize(m_pCamera->position()), glm::normalize(ray.direction)), currentColor.a);
             
         }
 

@@ -115,6 +115,8 @@ GradientVoxel GradientVolume::getGradientNearestNeighbor(const glm::vec3& coord)
 // Use the linearInterpolate function that you implemented below.
 GradientVoxel GradientVolume::getGradientLinearInterpolate(const glm::vec3& coord) const
 {
+     if (glm::any(glm::lessThan(coord - 1.0f, glm::vec3(0))) || glm::any(glm::greaterThanEqual(coord + 1.0f, glm::vec3(m_dim))))
+        return { glm::vec3(0.0f), 0.0f };
 
      double x0 =  glm::floor(coord[0]);
      double x1 =  glm::ceil(coord[0]);
