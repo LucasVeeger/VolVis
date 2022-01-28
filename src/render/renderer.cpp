@@ -194,7 +194,7 @@ glm::vec4 Renderer::traceRayISO(const Ray& ray, float sampleStep) const
             if (m_config.volumeShading) {
                 float pos_accurate = bisectionAccuracy(ray, t - sampleStep, t, isoValue);
                 samplePos = ray.origin + pos_accurate * ray.direction;
-                volume::GradientVoxel gradient = m_pGradientVolume->getGradient(samplePos.x, samplePos.y, samplePos.z);
+                volume::GradientVoxel gradient = m_pGradientVolume->getGradientInterpolate(samplePos);
 
                 //Pass the gradient and the normal color to the function to get the shaded color.
                 glm::vec3 phong_color = computePhongShading(isoColor, gradient, glm::normalize(ray.direction), glm::normalize(m_pCamera->position()));
@@ -260,18 +260,23 @@ float Renderer::bisectionAccuracy(const Ray& ray, float t0, float t1, float isoV
 // You are free to choose any specular power that you'd like.
 glm::vec3 Renderer::computePhongShading(const glm::vec3& color, const volume::GradientVoxel& gradient, const glm::vec3& L, const glm::vec3& V)
 {
+    if (gradient.magnitude == 0) {
+        return glm::vec3();
+    }
+    
     // Following the formulas stated on Wikipedia, considering a single light source.
     // Ip = ka*i_a + (kd(L*N)i_d + ks(R*V)^alpha * i_s)
     // R = 2(L*N)N - L
     // constants
-    const float ka = 0.1f;
-    const float kd = 0.7f;
-    const float ks = 0.2f;
+    const float ka = 0.1f; //0.1f;
+    const float kd = 0.7f; //0.7f;
+    const float ks = 0.2f; //0.2f;
     // shininess constant
     const float alpha = 100.0f;
 
-    // normal vector on gradient, normalized
+    // normal vector on gradient, normalized if magnitude > 0
     const glm::vec3& N = glm::normalize(gradient.dir);
+    
     // direction vector
     const glm::vec3& R = 2.0f * (glm::dot(L, N)) * N - L;
     // Phong formula
@@ -302,13 +307,11 @@ glm::vec4 Renderer::traceRayComposite(const Ray& ray, float sampleStep) const
 
         currentColor = getTFValue(val);
         if (m_config.volumeShading) {
-            volume::GradientVoxel gradient = m_pGradientVolume->getGradient(samplePos.x, samplePos.y, samplePos.z);
+            volume::GradientVoxel gradient = m_pGradientVolume->getGradientInterpolate(samplePos);
 
             //Pass the gradient and the normal color to the function to get the shaded color.
-            glm::vec3 phong_color = computePhongShading(currentColor, gradient, glm::normalize(ray.direction), glm::normalize(m_pCamera->position()));
-
-            // using the shaded color to compute the final image color
-            currentColor = glm::vec4(phong_color, currentColor.a);
+            currentColor = glm::vec4(computePhongShading(currentColor*currentColor.w, gradient, glm::normalize(m_pCamera->position()), glm::normalize(ray.direction)), currentColor.a);
+            
         }
 
         previousColor.r = currentColor.a * currentColor.r + (1 - currentColor.a) * previousColor.r;
@@ -337,7 +340,77 @@ glm::vec4 Renderer::getTFValue(float val) const
 // Use the getTF2DOpacity function that you implemented to compute the opacity according to the 2D transfer function.
 glm::vec4 Renderer::traceRayTF2D(const Ray& ray, float sampleStep) const
 {
-    return glm::vec4(0.0f);
+
+    glm::vec3 c0 = glm::normalize(ray.origin);
+    glm::vec4 currColor = glm::vec4();
+    float currentOpacity = 0.0f;
+
+    // Incrementing samplePos directly instead of recomputing it each frame gives a measureable speed-up.
+    glm::vec3 samplePos = ray.origin + ray.tmin * ray.direction;
+
+    const glm::vec3 increment = sampleStep * ray.direction;
+
+    glm::vec4 currentColor;
+    glm::vec4 previousColor = glm::vec4();
+
+    for (float t = ray.tmin; t <= ray.tmax; t += sampleStep, samplePos += increment) {
+        const float val = m_pVolume->getSampleInterpolate(samplePos);
+
+        if (previousColor.a >= 0.95)
+            break;
+
+        volume::GradientVoxel gradient = m_pGradientVolume->getGradientInterpolate(samplePos);
+
+        glm::vec3 lCvec = glm::vec3();
+
+        double lightVectorNorm = glm::length(ray.direction);
+
+        for (int s = 0; s < 3; s++)
+            lCvec[s] = ray.direction[s] / (lightVectorNorm + .000000001);
+
+        //normalising the normal vector.
+        glm::vec3 normalVector = glm::vec3();
+        normalVector[0] = gradient.dir.x / (gradient.magnitude + .000000001);
+        normalVector[1] = gradient.dir.y / (gradient.magnitude + .000000001);
+        normalVector[2] = gradient.dir.z / (gradient.magnitude + .000000001);
+        currentColor = m_config.TF2DColor;
+
+        glm::vec4 kblue = glm::vec4(0.0, 0.0, 0.4, currentColor.a);
+        glm::vec4 kyellow = glm::vec4(0.4, 0.4, 0.0, currentColor.a);
+
+        glm::vec4 kcool = glm::vec4(0.0, 0.0, 0.0, currentColor.a);
+        glm::vec4 kwarm = glm::vec4(0.0, 0.0, 0.0, currentColor.a);
+
+        kcool.r = kblue.r + 0.2 * currentColor.r;
+        kcool.g = kblue.g + 0.2 * currentColor.g;
+        kcool.b = kblue.b + 0.2 * currentColor.b;
+
+        kwarm.r = kyellow.r + 0.6 * currentColor.r;
+        kwarm.g = kyellow.g + 0.6 * currentColor.g;
+        kwarm.b = kyellow.b + 0.6 * currentColor.b;
+
+        glm::vec4 toneC = glm::vec4(0.0, 0.0, 0.0, currentColor.a);
+
+        double factor = (1 + (glm::dot(lCvec, normalVector))) / 2;
+
+        toneC.r = factor * kcool.r + (1 - factor) * kwarm.r;
+        toneC.g = factor * kcool.g + (1 - factor) * kwarm.g;
+        toneC.b = factor * kcool.b + (1 - factor) * kwarm.b;
+        currColor.r = toneC.r;
+        currColor.g = toneC.g;
+        currColor.b = toneC.b;
+
+        currentOpacity = getTF2DOpacity(val, gradient.magnitude);
+
+        previousColor.r += (1.0 - previousColor.a) * currentOpacity * currColor.r;
+        previousColor.g += (1.0 - previousColor.a) * currentOpacity * currColor.g;
+        previousColor.b += (1.0 - previousColor.a) * currentOpacity * currColor.b;
+
+        // We also take account of the opacity in this case.
+        previousColor.a += (1.0 - previousColor.a) * currentOpacity;
+    }
+
+    return previousColor;
 }
 
 // ======= TODO: IMPLEMENT ========
@@ -349,8 +422,24 @@ glm::vec4 Renderer::traceRayTF2D(const Ray& ray, float sampleStep) const
 // The 2D transfer function settings can be accessed through m_config.TF2DIntensity and m_config.TF2DRadius.
 float Renderer::getTF2DOpacity(float intensity, float gradientMagnitude) const
 {
-    return 0.0f;
+    float opacity = 0.0;
+
+    // Here we check if a point in the 2d space of
+    // our transfer function is within the two lines as prescribed by the triangle.
+    double d1 = (intensity - m_config.TF2DIntensity) * (m_pGradientVolume->maxMagnitude()) - (gradientMagnitude) * (m_config.TF2DRadius);
+    double d2 = (intensity - m_config.TF2DIntensity) * (m_pGradientVolume->maxMagnitude()) - (gradientMagnitude) * (-m_config.TF2DRadius);
+
+    // If the point lies in the triangle, an opacity is given to that point.
+    if (d1 < 0 && d2 > 0) {
+        //Here we do a linear interpolation based on the distance from
+        // the voxels intensity value to the intensity and normalise.
+        double factor = (intensity - m_config.TF2DIntensity) / m_config.TF2DRadius;
+        opacity = m_config.TF2DColor.a * (1 - factor) + 0 * factor;
+    }
+
+    return opacity;
 }
+
 
 // This function computes if a ray intersects with the axis-aligned bounding box around the volume.
 // If the ray intersects then tmin/tmax are set to the distance at which the ray hits/exists the

@@ -121,8 +121,8 @@ float Volume::getSampleNearestNeighbourInterpolation(const glm::vec3& coord) con
 // This function returns the trilinear interpolated value at the continuous 3D position given by coord.
 float Volume::getSampleTriLinearInterpolation(const glm::vec3& coord) const
 {
-    // check if the coordinate is within volume boundaries, since we only look at direct neighbours we only need to check within 0.5
-    if (glm::any(glm::lessThan(coord, glm::vec3(0))) || glm::any(glm::greaterThanEqual(coord, glm::vec3(m_dim - 2))))
+    // check if the coordinate is within volume boundaries, TODO WHY?
+    if (glm::any(glm::lessThan(coord - 1.0f, glm::vec3(0))) || glm::any(glm::greaterThanEqual(coord + 1.0f, glm::vec3(m_dim))))
         return 0.0f;
 
 
@@ -189,6 +189,17 @@ float Volume::biLinearInterpolate(const glm::vec2& xyCoord, int z) const
 // This function represents the h(x) function, which returns the weight of the cubic interpolation kernel for a given position x
 float Volume::weight(float x)
 {
+    // alpha constant
+    float a = -0.5f  ;
+
+    // check in which interval x resides, return proper value.
+    if (abs(x) < 1.0f) {
+        return (a + 2.0f) * pow(abs(x), 3) - (a + 3.0f) * pow(abs(x), 2) + 1.0f;
+    }
+    if (abs(x) < 2.0f) {
+        return a * pow(abs(x), 3) - 5.0f * a * pow(abs(x), 2) + 8.0f * a * abs(x) - 4.0f * a;
+    }
+    // x outside interval, function returns 0;
     return 0.0f;
 }
 
@@ -196,21 +207,99 @@ float Volume::weight(float x)
 // This functions returns the results of a cubic interpolation using 4 values and a factor
 float Volume::cubicInterpolate(float g0, float g1, float g2, float g3, float factor)
 {
-    return 0.0f;
+    return g0 * weight(1.0 + factor) + g1 * weight(factor) + g2 * weight(1.0 - factor) + g3 * weight(2 - factor);
+    //return g1 + 0.5f * factor * (g2 - g0 + factor * (2.0f * g0 - 5.0f * g1 + 4.0f * g2 - g3 + factor * (3.0f * (g1 - g2) + g3 - g0)));
 }
 
 // ======= OPTIONAL : This functions can be used to implement cubic interpolation ========
 // This function returns the value of a bicubic interpolation
 float Volume::biCubicInterpolate(const glm::vec2& xyCoord, int z) const
 {
-    return 0.0f;
+    // Goal is to create grid of 16 points around the xyCoord.
+    // flooring the x and y coordinate. 
+    float x0 = glm::floor(xyCoord.x);
+    float y0 = glm::floor(xyCoord.y);
+
+    // create other grid points, x_min1, x1 and x2
+    float x_min1 = x0 - 1.0f;
+    float y_min1 = y0 - 1.0f;
+    float x1 = x0 + 1.0f;
+    float y1 = y0 + 1.0f;
+    float x2 = x0 + 2.0f;
+    float y2 = y0 + 2.0f;
+
+    float x_ratio = (float)(xyCoord.x - x0);
+    float y_ratio = (float)(xyCoord.y - y0);
+
+    //float b_min1 = cubicInterpolate(getVoxel((int)x_min1, (int)y_min1, (int)z) * weight(x_min1 - xyCoord.x),
+    //    getVoxel((int)x0, (int)y_min1, (int)z) * weight(x0 - xyCoord.x),
+    //    getVoxel((int)x1, (int)y_min1, (int)z) * weight(x1 - xyCoord.x),
+    //    getVoxel((int)x2, (int)y_min1, (int)z) * weight(x2 - xyCoord.x),
+    //    x_ratio);
+    //float b0 = cubicInterpolate(getVoxel((int)x_min1, (int)y0, (int)z) * weight(x_min1 - xyCoord.x),
+    //    getVoxel((int)x0, (int)y0, (int)z) * weight(x0 - xyCoord.x),
+    //    getVoxel((int)x1, (int)y0, (int)z) * weight(x1 - xyCoord.x),
+    //    getVoxel((int)x2, (int)y0, (int)z) * weight(x2 - xyCoord.x),
+    //    x_ratio);
+    //float b1 = cubicInterpolate(getVoxel((int)x_min1, (int)y1, (int)z) * weight(x_min1 - xyCoord.x),
+    //    getVoxel((int)x0, (int)y1, (int)z) * weight(x0 - xyCoord.x),
+    //    getVoxel((int)x1, (int)y1, (int)z) * weight(x1 - xyCoord.x),
+    //    getVoxel((int)x2, (int)y1, (int)z) * weight(x2 - xyCoord.x),
+    //    x_ratio);
+    //float b2 = cubicInterpolate(getVoxel((int)x_min1, (int)y2, (int)z) * weight(x_min1 - xyCoord.x),
+    //    getVoxel((int)x0, (int)y2, (int)z) * weight(x0 - xyCoord.x),
+    //    getVoxel((int)x1, (int)y2, (int)z) * weight(x1 - xyCoord.x),
+    //    getVoxel((int)x2, (int)y2, (int)z) * weight(x2 - xyCoord.x),
+    //    x_ratio);
+
+    float b_min1 = cubicInterpolate(getVoxel((int) x_min1, (int) y_min1, (int) z),
+        getVoxel((int)x0, (int)y_min1, (int)z),
+        getVoxel((int)x1, (int)y_min1, (int)z),
+        getVoxel((int)x2, (int)y_min1, (int)z),
+        x_ratio);
+    float b0 = cubicInterpolate(getVoxel((int)x_min1, (int)y0, (int)z),
+        getVoxel((int)x0, (int)y0, (int)z),
+        getVoxel((int)x1, (int)y0, (int)z),
+        getVoxel((int)x2, (int)y0, (int)z),
+        x_ratio);
+    float b1 = cubicInterpolate(getVoxel((int)x_min1, (int)y1, (int)z),
+        getVoxel((int)x0, (int)y1, (int)z),
+        getVoxel((int)x1, (int)y1, (int)z),
+        getVoxel((int)x2, (int)y1, (int)z),
+        x_ratio);
+    float b2 = cubicInterpolate(getVoxel((int)x_min1, (int)y2, (int)z),
+        getVoxel((int)x0, (int)y2, (int)z),
+        getVoxel((int)x1, (int)y2, (int)z),
+        getVoxel((int)x2, (int)y2, (int)z),
+        x_ratio);
+
+    
+    return cubicInterpolate(b_min1, b0, b1, b2, y_ratio);
 }
 
 // ======= OPTIONAL : This functions can be used to implement cubic interpolation ========
 // This function computes the tricubic interpolation at coord
 float Volume::getSampleTriCubicInterpolation(const glm::vec3& coord) const
 {
-    return 0.0f;
+    // Check if the kernel bounderies combined with the coordinate are within the volume boundaries.
+    if (glm::any(glm::lessThan(coord - 2.0f, glm::vec3(0))) || glm::any(glm::greaterThanEqual(coord + 2.0f, glm::vec3(m_dim))))
+        return 0.0f;
+
+    // 
+    float z0 = glm::floor(coord.z);
+    float z_min1 = z0 - 1.0f;
+    float z1 = z0 + 1.0f;
+    float z2 = z0 + 2.0f;
+
+    float z_ratio = (float)(coord.z - z0);
+
+    float s_min1 = biCubicInterpolate(glm::vec2(coord.x, coord.y), z_min1);
+    float s0 = biCubicInterpolate(glm::vec2(coord.x, coord.y), z0);
+    float s1 = biCubicInterpolate(glm::vec2(coord.x, coord.y), z1);
+    float s2 = biCubicInterpolate(glm::vec2(coord.x, coord.y), z2);
+    
+
+    return cubicInterpolate(s_min1,s0,s1,s2,z_ratio);
 }
 
 // Load an fld volume data file

@@ -116,49 +116,49 @@ GradientVoxel GradientVolume::getGradientNearestNeighbor(const glm::vec3& coord)
 GradientVoxel GradientVolume::getGradientLinearInterpolate(const glm::vec3& coord) const
 {
 
-//     double x0 =  glm::floor(coord[0]);
-//     double x1 =  glm::ceil(coord[0]);
+     double x0 =  glm::floor(coord[0]);
+     double x1 =  glm::ceil(coord[0]);
 
 
-//     double y0 =  glm::floor(coord[1]);
-//     double y1 =  glm::ceil(coord[1]);
+     double y0 =  glm::floor(coord[1]);
+     double y1 =  glm::ceil(coord[1]);
     
     
-//     double z0 =  glm::floor(coord[2]);
-//     double z1 =   glm::ceil(coord[2]);
+     double z0 =  glm::floor(coord[2]);
+     double z1 =   glm::ceil(coord[2]);
     
-//     // Compute the distance from the floor of the coordinate (d1) to the coordinate in all dimensions
-//     // The distance between the surrounding voxels (d2) for each dimension is 1.
-//     // So it is equal to the ratio between d1 and d2,
-//     float x_ratio = (float)(coord[0] - x0);
-//     float y_ratio = (float)(coord[1] - y0);
-//     float z_ratio = (float)(coord[2] - z0);
+     // Compute the distance from the floor of the coordinate (d1) to the coordinate in all dimensions
+     // The distance between the surrounding voxels (d2) for each dimension is 1.
+     // So it is equal to the ratio between d1 and d2,
+     float x_ratio = (float)(coord[0] - x0);
+     float y_ratio = (float)(coord[1] - y0);
+     float z_ratio = (float)(coord[2] - z0);
     
 
 
-//     // Bilineaire Interpolatie over y0 = floor y 
-//     GradientVoxel c00 = linearInterpolate(getGradient((int) x0, (int) y0, (int) z0),
-//                                     getGradient((int) x1, (int) y0, (int) z0),
-//                                     x_ratio);                                        
-//     GradientVoxel c01 = linearInterpolate(getGradient((int) x0, (int) y0, (int) z1),
-//                                     getGradient((int) x1, (int) y0, (int) z1),
-//                                     x_ratio);
+     // Bilineaire Interpolatie over y0 = floor y 
+     GradientVoxel c00 = linearInterpolate(getGradient((int) x0, (int) y0, (int) z0),
+                                     getGradient((int) x1, (int) y0, (int) z0),
+                                     x_ratio);                                        
+     GradientVoxel c01 = linearInterpolate(getGradient((int) x0, (int) y0, (int) z1),
+                                     getGradient((int) x1, (int) y0, (int) z1),
+                                     x_ratio);
 
 
 
 
-//     GradientVoxel c10 = linearInterpolate(getGradient((int) x0, (int) y1, (int) z0),
-//                                     getGradient((int) x1, (int) y1, (int) z0),
-//                                     x_ratio);
-//     GradientVoxel c11 = linearInterpolate(getGradient((int) x0, (int) y1, (int) z1),
-//                                     getGradient((int) x1, (int) y1, (int) z1),
-//                                     x_ratio);
-//     GradientVoxel c0 = linearInterpolate(c00, c10, y_ratio);
-//     GradientVoxel c1 = linearInterpolate(c01,c11, y_ratio);
+     GradientVoxel c10 = linearInterpolate(getGradient((int) x0, (int) y1, (int) z0),
+                                     getGradient((int) x1, (int) y1, (int) z0),
+                                     x_ratio);
+     GradientVoxel c11 = linearInterpolate(getGradient((int) x0, (int) y1, (int) z1),
+                                     getGradient((int) x1, (int) y1, (int) z1),
+                                     x_ratio);
+     GradientVoxel c0 = linearInterpolate(c00, c10, y_ratio);
+     GradientVoxel c1 = linearInterpolate(c01,c11, y_ratio);
     
-//     GradientVoxel gv = linearInterpolate(c0, c1, z_ratio);
-//     return GradientVoxel {gv};
-    return GradientVoxel {};
+     GradientVoxel gv = linearInterpolate(c0, c1, z_ratio);
+     return GradientVoxel {gv};
+  
 }
 
 // ======= TODO : IMPLEMENT ========
@@ -166,8 +166,9 @@ GradientVoxel GradientVolume::getGradientLinearInterpolate(const glm::vec3& coor
 // At t=0, linearInterpolate should return g0 and at t=1 it returns g1.
 GradientVoxel GradientVolume::linearInterpolate(const GradientVoxel& g0, const GradientVoxel& g1, float factor)
 {
-    return GradientVoxel {};
-    // return GradientVoxel {(1 - factor) * g0.x + factor * g1.x, (1 - factor) * g0.y + factor * g1.y, (1 - factor) * g0.z + factor * g1.z};
+    const glm::vec3 lin_pol = g0.dir * (1 - factor) + g1.dir * factor;
+
+    return GradientVoxel {lin_pol, glm::length(lin_pol)};
 }
 
 
